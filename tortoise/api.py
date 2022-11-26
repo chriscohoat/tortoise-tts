@@ -304,6 +304,20 @@ class TextToSpeech:
         with torch.no_grad():
             return self.rlg_auto(torch.tensor([0.0])), self.rlg_diffusion(torch.tensor([0.0]))
 
+    def get_deterministic_conditioning_latents(self, seed):
+        # Added by Chris to test deterministic conditioning latents.
+        # Lazy-load the RLG models.
+        print("Using deterministic conditioning latents.")
+        if seed is None:
+            seed = 0
+        if self.rlg_auto is None:
+            self.rlg_auto = RandomLatentConverter(1024).eval()
+            self.rlg_auto.load_state_dict(torch.load(get_model_path('rlg_auto.pth', self.models_dir), map_location=torch.device('cpu')))
+            self.rlg_diffusion = RandomLatentConverter(2048).eval()
+            self.rlg_diffusion.load_state_dict(torch.load(get_model_path('rlg_diffuser.pth', self.models_dir), map_location=torch.device('cpu')))
+        with torch.no_grad():
+            return self.rlg_auto(torch.tensor([seed])), self.rlg_diffusion(torch.tensor([seed]))
+
     def tts_with_preset(self, text, preset='fast', **kwargs):
         """
         Calls TTS with one of a set of preset generation parameters. Options:
@@ -393,7 +407,7 @@ class TextToSpeech:
         elif conditioning_latents is not None:
             auto_conditioning, diffusion_conditioning = conditioning_latents
         else:
-            auto_conditioning, diffusion_conditioning = self.get_random_conditioning_latents()
+            auto_conditioning, diffusion_conditioning = self.get_deterministic_conditioning_latents(use_deterministic_seed)
         auto_conditioning = auto_conditioning.to(self.device)
         diffusion_conditioning = diffusion_conditioning.to(self.device)
 
