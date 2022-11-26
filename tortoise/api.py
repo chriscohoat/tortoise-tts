@@ -307,7 +307,7 @@ class TextToSpeech:
     def get_deterministic_conditioning_latents(self, seed):
         # Added by Chris to test deterministic conditioning latents.
         # Lazy-load the RLG models.
-        print("Using deterministic conditioning latents.")
+        print("Using deterministic conditioning latents with seed {}".format(seed))
         if seed is None:
             seed = 0
         if self.rlg_auto is None:
