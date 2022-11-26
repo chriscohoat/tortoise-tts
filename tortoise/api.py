@@ -17,7 +17,9 @@ from tqdm import tqdm
 from tortoise.models.arch_util import TorchMelSpectrogram
 from tortoise.models.clvp import CLVP
 from tortoise.models.cvvp import CVVP
-from tortoise.models.random_latent_generator import RandomLatentConverter
+from tortoise.models.random_latent_generator import (
+    RandomButDeterministicLatentConverter, RandomLatentConverter
+)
 from tortoise.models.vocoder import UnivNetGenerator
 from tortoise.utils.audio import wav_to_univnet_mel, denormalize_tacotron_mel
 from tortoise.utils.diffusion import SpacedDiffusion, space_timesteps, get_named_beta_schedule
@@ -311,9 +313,9 @@ class TextToSpeech:
         if seed is None:
             seed = 0
         if self.rlg_auto is None:
-            self.rlg_auto = RandomLatentConverter(1024).eval()
+            self.rlg_auto = RandomButDeterministicLatentConverter(seed, 1024).eval()
             self.rlg_auto.load_state_dict(torch.load(get_model_path('rlg_auto.pth', self.models_dir), map_location=torch.device('cpu')))
-            self.rlg_diffusion = RandomLatentConverter(2048).eval()
+            self.rlg_diffusion = RandomButDeterministicLatentConverter(seed, 2048).eval()
             self.rlg_diffusion.load_state_dict(torch.load(get_model_path('rlg_diffuser.pth', self.models_dir), map_location=torch.device('cpu')))
         with torch.no_grad():
             return self.rlg_auto(torch.tensor([seed])), self.rlg_diffusion(torch.tensor([seed]))
